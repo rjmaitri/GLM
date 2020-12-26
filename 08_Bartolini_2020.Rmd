@@ -13,6 +13,8 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r}
 library(tidyverse)
+library(car)
+library(emmeans)
 ```
 
 https://github.com/rjmaitri/GLM.git
@@ -81,15 +83,58 @@ summary(LS_pine)
 
 ```
 
+```{r}
+#Evaluate the model fit
+par(mfrow=c(2,2))
+plot(LS_pine, which=c(1,2,5))
+par(mfrow=c(1,1))
+
+```
+
+```{r}
+residualPlots(LS_pine)
+
+```
+
+```{r}
+Anova(LS_pine)
+
+```
+
+
+This model has residuals fitted around zero and clustered vertically by factors. The qq
+
 1.2 How much variation is explained by your model?
 
-<p style="color:green">The multiple and adjusted R2 values are nearly 0.86-0.88, meaning that the island habitat is highly explanatory of conemass.</span>
-
+<span style="color: green;">The multiple and adjusted R2 values are nearly 0.86-0.88, meaning that the island habitat explains 88% conemass.</span>
 
 
 1.3 Show which means are different from each other. Are you correcting p-values? If so, how, and justify your choice.
 
 ```{r}
+#Estimated margin of means
+pine_em <- emmeans(LS_pine, ~habitat.f)
 
+pine_em
 
 ```
+
+```{r}
+contrast(pine_em, method = "tukey")
+```
+
+
+2. Comparing Means from Multiple Categories
+In a study from Rogers et al. (2020) link, the authors performed an experiment where they moved panels that had been colonized by invertebrates on a dock to a nearby rocky jetty where predators could access panels. To separate out the effects of changes in abiotic environment versus predation, they performed a factorial experiment, either caging or not caging panels and placing them either on the side of a cinder block or hanging on a piece of PVC attached to the block where predators would have little access (but weren’t entirely stopped). They then looked at change in total cover of invertebrates. Using this old data file dug off of my hard drive, let’s see what they found.
+
+2.1. Load and plot the data. We are interested in change in percent cover. Choose a plot that not only shows the raw data, but also the means and SE or CI of those means. +1 EC if Michael thinks it’s fancy.
+
+2.2 Fit a model using likelihood and evaluate all relevant assumptions. Do you meet assumptions?
+
+2.3 If you answered yes to the above…. you are wrong. It doesn’t! Percentage data is weird. Difference in percentages can be ever weirder! There are three tried and true solutions here. But they MIGHT not all work.
+
+Incorporate initial cover as a covariate. This takes out that influence, and as such we’re looking at residuals of change. This sometimes, but not always, works.
+
+Divide change by initial cover to express change as percent change relative to initial cover.
+
+Calculate difference in logit cover (so, logist(initial cover) - logit(final cover)). Logit transformations linearize percent cover data, and are often all that is needed to work percent cover into a linear model. You can use car::logit() for this.
